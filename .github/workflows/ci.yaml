@@ -1,0 +1,23 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+ buildifier-check:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Setup buildifier
+        run: |
+          curl -L -o /tmp/buildifier https://github.com/bazelbuild/buildtools/releases/download/v6.3.3/buildifier-linux-amd64
+          chmod a+x /tmp/buildifier
+          sudo mv /tmp/buildifier /usr/local/bin
+      - name: Check BUILD files
+        run: buildifier --warnings=all --lint=warn -mode=diff --diff_command="diff -U3" -r ./

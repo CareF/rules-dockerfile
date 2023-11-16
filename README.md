@@ -1,4 +1,4 @@
-# rules_dockerfile
+# rules_dockerfile (WIP)
 
 Rules for using Dockerfile for building container images in Bazel projects.
 
