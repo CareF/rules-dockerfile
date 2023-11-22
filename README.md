@@ -52,4 +52,4 @@ of building cloud-based apps, so this non-bazel-style compromise is what I would
 
 ## Version support
 
-This project is developed and tested under Bazel 5.4.0.
+This project is developed and tested under Bazel 5.4.1.
