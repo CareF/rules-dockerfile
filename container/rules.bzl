@@ -1,6 +1,6 @@
 """Defines the docker_image rule."""
 
-load("@rules_pkg//pkg:mappings.bzl", "pkg_files")
+load("@rules_pkg//pkg:mappings.bzl", "pkg_attributes", "pkg_files")
 load("@rules_pkg//pkg:tar.bzl", "pkg_tar")
 
 def _expand_dockerfile_stub_impl(ctx):
@@ -63,6 +63,11 @@ def docker_image(
         name = "_{}_files".format(name),
         srcs = deps,
         strip_prefix = "/",
+        attributes = pkg_attributes(
+            # Override the default 644 permissions since there may be executables
+            # 0555 is the default permission for files directly loaded in pkg_tar
+            mode = "0555",
+        ),
     )
     pkg_tar(
         name = name + ".tar",
