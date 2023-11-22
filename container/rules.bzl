@@ -4,36 +4,40 @@ load("@rules_pkg//pkg:mappings.bzl", "pkg_attributes", "pkg_files")
 load("@rules_pkg//pkg:tar.bzl", "pkg_tar")
 
 def _expand_dockerfile_stub_impl(ctx):
+    dockerfile_path = "Dockerfile" if ctx.attr.default_dockerfile else ctx.file.dockerfile.short_path
+    script = ctx.actions.declare_file(ctx.attr.name)
+    runfiles = ctx.runfiles(files = [ctx.file.context])
     ctx.actions.expand_template(
         template = ctx.file.stub,
-        output = ctx.outputs.out,
+        output = script,
         substitutions = {
-            "{{ARGS}}": ctx.attr.args,
+            "{{ARGS}}": ctx.attr.image_args,
             "{{CONTEXT}}": ctx.file.context.short_path,
-            "{{DOCKERFILE}}": "" if ctx.attr.default_dockerfile else ("--file " + ctx.file.dockerfile.short_path),
+            "{{DOCKERFILE}}": dockerfile_path,
             "{{TAGS}}": " ".join(["-t " + tag for tag in ctx.attr.image_tags]),
         },
     )
+    return DefaultInfo(runfiles = runfiles, executable = script)
 
 _expand_dockerfile_stub = rule(
     implementation = _expand_dockerfile_stub_impl,
     attrs = {
-        "args": attr.string(mandatory = True),
         "context": attr.label(mandatory = True, allow_single_file = True),
         "default_dockerfile": attr.bool(default = True),
         "dockerfile": attr.label(mandatory = True, allow_single_file = True),
+        "image_args": attr.string(mandatory = True),
         "image_tags": attr.string_list(
             mandatory = True,
             allow_empty = False,
             default = ["latest"],
         ),
-        "out": attr.output(mandatory = True),
         "stub": attr.label(
             default = "@rules_dockerfile//stubs:docker_build.sh.tpl",
             allow_single_file = True,
         ),
     },
     output_to_genfiles = True,
+    executable = True,
 )
 
 def docker_image(
@@ -80,16 +84,10 @@ def docker_image(
         include_runfiles = True,
     )
     _expand_dockerfile_stub(
-        name = "_{}_shell".format(name),
-        out = "build_{}.sh".format(name),
+        name = name,
         image_tags = ["{}:{}".format(label, tag) for tag in image_tags],
-        args = " ".join(args),
+        image_args = " ".join(args),
         context = ":{}.tar".format(name),
         dockerfile = dockerfile,
         default_dockerfile = default_dockerfile,
-    )
-    native.sh_binary(
-        name = name,
-        srcs = [":_{}_shell".format(name)],
-        data = [":{}.tar".format(name)],
     )
