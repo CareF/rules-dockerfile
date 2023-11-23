@@ -85,7 +85,8 @@ def docker_image(
     )
     pkg_tar(
         name = name + "_tar",
-        out = name + ".tar",
+        out = name + ".tar.gz",
+        extension = "tar.gz",
         srcs = [":_{}_files".format(name), dockerfile],
         strip_prefix = "." if default_dockerfile else "/",
         remap_paths = {} if default_dockerfile else {
