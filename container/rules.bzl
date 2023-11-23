@@ -3,19 +3,31 @@
 load("@rules_pkg//pkg:mappings.bzl", "pkg_attributes", "pkg_files")
 load("@rules_pkg//pkg:tar.bzl", "pkg_tar")
 
+def docker_build_script(tags, dockerfile, args, context):
+    DOCKER_BUILD_SCRIPT_TMP = """#!/bin/bash
+    set -e -x
+    docker build {tags} --file {dockerfile} {args} $@ - < {context}
+    """
+    return DOCKER_BUILD_SCRIPT_TMP.format(
+        tags = " ".join(["-t " + tag for tag in tags]),
+        dockerfile = dockerfile,
+        args = " ".join(args),
+        context = context,
+    )
+
 def _expand_dockerfile_stub_impl(ctx):
     dockerfile_path = "Dockerfile" if ctx.attr.default_dockerfile else ctx.file.dockerfile.short_path
     script = ctx.actions.declare_file(ctx.attr.name)
     runfiles = ctx.runfiles(files = [ctx.file.context])
-    ctx.actions.expand_template(
-        template = ctx.file.stub,
+    ctx.actions.write(
         output = script,
-        substitutions = {
-            "{{ARGS}}": ctx.attr.image_args,
-            "{{CONTEXT}}": ctx.file.context.short_path,
-            "{{DOCKERFILE}}": dockerfile_path,
-            "{{TAGS}}": " ".join(["-t " + tag for tag in ctx.attr.image_tags]),
-        },
+        content = docker_build_script(
+            ctx.attr.image_tags,
+            dockerfile_path,
+            ctx.attr.image_args,
+            ctx.file.context.short_path,
+        ),
+        is_executable = True,
     )
     return DefaultInfo(runfiles = runfiles, executable = script)
 
@@ -25,15 +37,11 @@ _expand_dockerfile_stub = rule(
         "context": attr.label(mandatory = True, allow_single_file = True),
         "default_dockerfile": attr.bool(default = True),
         "dockerfile": attr.label(mandatory = True, allow_single_file = True),
-        "image_args": attr.string(mandatory = True),
+        "image_args": attr.string_list(mandatory = True, default = []),
         "image_tags": attr.string_list(
             mandatory = True,
             allow_empty = False,
             default = ["latest"],
-        ),
-        "stub": attr.label(
-            default = "@rules_dockerfile//stubs:docker_build.sh.tpl",
-            allow_single_file = True,
         ),
     },
     output_to_genfiles = True,
@@ -63,6 +71,8 @@ def docker_image(
     """
     if not label:
         label = "bazel/" + name
+    if not image_tags:
+        fail("tags must not be empty")
     pkg_files(
         name = "_{}_files".format(name),
         srcs = deps,
@@ -74,7 +84,7 @@ def docker_image(
         ),
     )
     pkg_tar(
-        name = name + ".tar",
+        name = name + "_tar",
         out = name + ".tar",
         srcs = [":_{}_files".format(name), dockerfile],
         strip_prefix = "." if default_dockerfile else "/",
@@ -86,8 +96,8 @@ def docker_image(
     _expand_dockerfile_stub(
         name = name,
         image_tags = ["{}:{}".format(label, tag) for tag in image_tags],
-        image_args = " ".join(args),
-        context = ":{}.tar".format(name),
+        image_args = args,
+        context = ":{}_tar".format(name),
         dockerfile = dockerfile,
         default_dockerfile = default_dockerfile,
     )
