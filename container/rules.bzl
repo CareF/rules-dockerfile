@@ -102,3 +102,9 @@ def docker_image(
         dockerfile = dockerfile,
         default_dockerfile = default_dockerfile,
     )
+    native.sh_binary(
+        name = name + ".RUN",
+        srcs = ["@rules_dockerfile//container/scripts:run_image.sh"],
+        args = ["$(location :{})".format(name), "{}:{}".format(label, image_tags[0])],
+        data = [":{}".format(name)],
+    )
