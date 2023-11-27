@@ -108,3 +108,9 @@ def docker_image(
         args = ["$(location :{})".format(name), "{}:{}".format(label, image_tags[0])],
         data = [":{}".format(name)],
     )
+    native.sh_binary(
+        name = name + ".PUSH",
+        srcs = ["@rules_dockerfile//container/scripts:push_image.sh"],
+        args = ["$(location :{})".format(name), "{}:{}".format(label, image_tags[0])],
+        data = [":{}".format(name)],
+    )
