@@ -8,33 +8,89 @@ This is intended for people who still want to stick to Dockerfile
 
 Concept: `docker_image`
 
+## Rule arguments
+
+- `dockerfile`: str, default `"Dockerfile"`, the path to the Dockerfile used for the image.
+- `label`: str, default `"bazel/<name>"`, the label of the image. (TODO: change `bazel` to workspace name)
+- `image_tags`: list, default `["latest"]`, the tags of the image. They combines with `label`.
+- `args`: list, default `[]`, the extra arguments to pass to the `docker build` command.
+- `deps`: list, default `[]`, the dependencies of the image. All files needed to build the image should be listed here.
+- `default_dockerfile`: bool, default `True`. Whether to rename the `dockerfile` to `/Dockerfile` in the built context tarball.
+
 ## Example
 
-TODO
+To build a image in local machine, run the following command.
 
 ```bash
-bazel run //hello:hello_world_image.build
+bazel run //examples/hello_world:hello
 ```
 
-This shall build a docker image and register it to your local machine with name `hello/hello_world`
-and tag `latest`.
+This shall build a docker image and register it to your local machine with name `local/hello_world`
+and tag `latest` and `v1.0.0`.
 
-We intentionally do not support `bazel build` a `tar` file for a image as a best respect to the
+We intentionally do not support `bazel build` an image `tar` file as a best respect to the
 [hermeticity](#hermeticity) Bazel philosophy.
 
 Alternatively if you want to run the image,
 
 ```bash
-bazel run //hello:hello_world_image
+bazel run //examples/hello_world:hello.RUN
 ```
+
+To push the image,
+
+```bash
+bazel run //examples/hello_world:hello.PUSH
+```
+
+See [examples](examples/) for more details.
 
 ## Integrating with kaniko
 
 [kaniko](https://github.com/GoogleContainerTools/kaniko) is widely used for automatic building and
 publishing images, especially in CI/CD pipelines.
 
-We provide a `tar.gz` file result as an intermediate Bazel target to use as a `--context` input
-with kaniko to integrate the `docker_image` with kaniko.
+We provide a `tar.gz` context file as an intermediate Bazel target to use for the `--context` input
+with kaniko. For using it as CI jobs
+
+### GitHub-Action
+
+TBD
+
+### GitLab-ci
+
+TBD
+
+```yaml
+# define a job for building the tarball artifacts
+build-tar:
+  stage: build
+  tags:
+    - runner-${ARCH}
+  image:
+    name: ${BAZEL_ENV_IMAGE}
+    entrypoint: [""]
+  script:
+    - bazel build //path/to/target:image_tar
+  artifact:
+    path: bazel-out/
+
+build-container:
+  stage: publish
+  tags:
+    # run each build on a suitable, pre-configured runner (must match the target architecture)
+    - runner-${ARCH}
+  image:
+    name: gcr.io/kaniko-project/executor:debug
+    entrypoint: [""]
+  script:
+    - >-
+      /kaniko/executor
+      --context "${CI_PROJECT_DIR}"
+      --dockerfile "${CI_PROJECT_DIR}/Dockerfile"
+      # push the image to the GitLab container registry, add the current arch as tag.
+      --destination "${CI_REGISTRY_IMAGE}:${ARCH}"
+```
 
 See the [kaniko document](https://github.com/GoogleContainerTools/kaniko#kaniko-build-contexts)
 for more detail.
