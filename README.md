@@ -26,7 +26,7 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 http_archive(
     name = "rules_dockerfile",
     urls = [
-        "https://github.com/CareF/rules-dockerfile/archive/refs/tags/v0.0.6.tar.gz",  # update the tag accordingly
+        "https://github.com/CareF/rules-dockerfile/archive/refs/tags/v0.0.7.tar.gz",  # update the tag accordingly
     ],
     sha256 = "<fill in the sha256 accordingly>",
 )
