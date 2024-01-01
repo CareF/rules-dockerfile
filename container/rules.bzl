@@ -59,18 +59,18 @@ def docker_image(
     """Rules to build a docker image from dockerfile.
 
     Args:
-        name: argument description
+        name: the name of the rule for building the docker image
         dockerfile: filename of the Dockerfile
-        label: the label of the docker image, if not specified, it will be "bazel/" + name
-        image_tags:
-        args:
-        deps:
+        label: the label of the docker image, if not specified, it will be "local/" + name,
+        image_tags: the image tags of the docker image
+        args: args for docker build
+        deps: the dependencies (files needed besides the Dockerfile) of the docker image
         default_dockerfile: bool, default True. If it is True, the "dockerfile" will be packaged
             into the tar file as /Dockerfile. Otherwise, the "dockerfile" will be remain its
             original path.
     """
     if not label:
-        label = "bazel/" + name
+        label = "local/" + name
     if not image_tags:
         fail("tags must not be empty")
     pkg_files(

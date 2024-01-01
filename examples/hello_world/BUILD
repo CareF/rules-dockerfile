@@ -6,6 +6,6 @@ docker_image(
         "v1.0.0",
         "latest",
     ],
-    label = "local/hello_world",
+    label = "example/hello_world",
     # default_dockerfile = False,
 )
