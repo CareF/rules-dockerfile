@@ -1,4 +1,4 @@
-load("@rules_duckerfile//container:rules.bzl", "docker_image")
+load("@rules_dockerfile//container:rules.bzl", "docker_image")
 
 docker_image(
     name = "foo",

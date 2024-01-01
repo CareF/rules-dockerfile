@@ -1,4 +1,4 @@
-workspace(name = "rules_duckerfile")
+workspace(name = "rules_dockerfile")
 
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 

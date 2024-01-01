@@ -29,7 +29,7 @@ _expand_dockerfile_stub = rule(
         ),
         "out": attr.output(mandatory = True),
         "stub": attr.label(
-            default = "@rules_duckerfile//stubs:docker_build.sh.tpl",
+            default = "@rules_dockerfile//stubs:docker_build.sh.tpl",
             allow_single_file = True,
         ),
     },
