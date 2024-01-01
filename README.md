@@ -6,16 +6,58 @@ This is intended for people who still want to stick to Dockerfile
 (v.s. [rules_docker](https://github.com/bazelbuild/rules_docker) or
 [rules_oci](https://github.com/bazel-contrib/rules_oci)) for constructing container images.
 
-Concept: `docker_image`
+This bazel package provides a macro called `docker_image` to support running docker build/run/push in a bazel repo.
 
-## Rule arguments
+## Rule `docker_image` arguments
 
 - `dockerfile`: str, default `"Dockerfile"`, the path to the Dockerfile used for the image.
-- `label`: str, default `"bazel/<name>"`, the label of the image. (TODO: change `bazel` to workspace name)
+- `label`: str, default `"bazel/<name>"`, the label of the image.
 - `image_tags`: list, default `["latest"]`, the tags of the image. They combines with `label`.
 - `args`: list, default `[]`, the extra arguments to pass to the `docker build` command.
 - `deps`: list, default `[]`, the dependencies of the image. All files needed to build the image should be listed here.
 - `default_dockerfile`: bool, default `True`. Whether to rename the `dockerfile` to `/Dockerfile` in the built context tarball.
+
+## Usage:
+
+In your `WORKSPACE` file, add the following lines:
+
+```starlark
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+http_archive(
+    name = "rules_dockerfile",
+    urls = [
+        "https://github.com/CareF/rules-dockerfile/archive/refs/tags/v0.0.6.tar.gz",  # update the tag accordingly
+    ],
+    sha256 = "<fill in the sha256 accordingly>",
+)
+
+load("@rules_dockerfile//deps:deps.bzl", "rules_dockerfile_dependencies")
+
+rules_dockerfile_dependencies()  # or alternatively, adding rules_pkg and bazel_skylib manually
+
+load("@rules_pkg//pkg:deps.bzl", "rules_pkg_dependencies")
+
+rules_pkg_dependencies()
+
+load("@bazel_skylib//:workspace.bzl", "bazel_skylib_workspace")
+
+bazel_skylib_workspace()
+```
+
+In your `BUILD` file, add docker image target like:
+
+```starlark
+load("@rules_dockerfile//container:rules.bzl", "docker_image")
+
+docker_image(
+    name = "hello",
+    image_tags = [
+        "v1.0.0",
+        "latest",
+    ],
+    label = "example/hello_world",
+)
+```
 
 ## Example
 
